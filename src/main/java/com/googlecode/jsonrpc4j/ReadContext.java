@@ -1,6 +1,8 @@
 package com.googlecode.jsonrpc4j;
 
+import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.MappingIterator;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.io.IOException;
@@ -10,19 +12,28 @@ import java.io.InputStream;
 public class ReadContext {
 	
 	private final InputStream input;
+	private JsonParser parser = null;
 	private final ObjectMapper mapper;
+	private MappingIterator<JsonNode> iterator = null;
 	
-	private ReadContext(InputStream input, ObjectMapper mapper) {
+	private ReadContext(InputStream input, ObjectMapper mapper) throws IOException {
 		this.input = new NoCloseInputStream(input);
 		this.mapper = mapper;
 	}
 	
-	public static ReadContext getReadContext(InputStream input, ObjectMapper mapper) {
+	public static ReadContext getReadContext(InputStream input, ObjectMapper mapper) throws IOException {
 		return new ReadContext(input, mapper);
 	}
 	
 	public JsonNode nextValue() throws IOException {
-		return mapper.readValue(input, JsonNode.class);
+		if (parser == null) {
+			parser = mapper.getFactory().createParser(input);
+		}
+		if (iterator == null || false == iterator.hasNext()) {
+			iterator = mapper.readValues(parser, JsonNode.class);
+		}
+		JsonNode next = iterator.next();
+		return next;
 	}
 	
 	public void assertReadable() throws IOException {
@@ -39,7 +50,7 @@ public class ReadContext {
 	public int hashCode() {
 		final int prime = 31;
 		int result = 1;
-		result = prime * result + input.hashCode();
+		result = prime * result + parser.hashCode();
 		result = prime * result + (mapper == null ? 0 : mapper.hashCode());
 		return result;
 	}
@@ -53,7 +64,7 @@ public class ReadContext {
 		if (getClass() != obj.getClass())
 			return false;
 		ReadContext other = (ReadContext) obj;
-		if (!input.equals(other.input))
+		if (!parser.equals(other.parser))
 			return false;
 		if (mapper == null) {
 			if (other.mapper != null)

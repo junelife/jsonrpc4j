@@ -36,12 +36,13 @@ public class JsonRpcClient {
 	// Toha: to use same logger in extension classes
 	protected final Logger logger = LoggerFactory.getLogger(this.getClass());
 	
-	private final ObjectMapper mapper;
+	protected final ObjectMapper mapper;
 	private final Random random;
 	private RequestListener requestListener;
 	private RequestIDGenerator requestIDGenerator;
 	private ExceptionResolver exceptionResolver;
 	private Map<String, Object> additionalJsonContent = new HashMap<>();
+	protected ReadContext readContext = null;
 	
 	/**
 	 * Creates a client that uses the default {@link ObjectMapper}
@@ -178,7 +179,7 @@ public class JsonRpcClient {
 	}
 	
 	/**
-	 * Reads a JSON-PRC response from the server.  This blocks until
+	 * Reads a JSON-RPC response from the server.  This blocks until
 	 * a response is received. If an id is given, responses that do
 	 * not correspond, are disregarded.
 	 *
@@ -190,7 +191,7 @@ public class JsonRpcClient {
 	 */
 	private Object readResponse(Type returnType, InputStream input, String id) throws Throwable {
 		
-		ReadContext context = ReadContext.getReadContext(input, mapper);
+		ReadContext context = readContext != null ? readContext : ReadContext.getReadContext(input, mapper);
 		ObjectNode jsonObject = getValidResponse(id, context);
 		notifyAnswerListener(jsonObject);
 		handleErrorResponse(jsonObject);
@@ -242,14 +243,14 @@ public class JsonRpcClient {
 		internalWriteRequest(methodName, argument, output, id);
 	}
 	
-	private ObjectNode getValidResponse(String id, ReadContext context) throws IOException {
+	protected ObjectNode getValidResponse(String id, ReadContext context) throws IOException {
 		JsonNode response = readResponseNode(context);
 		raiseExceptionIfNotValidResponseObject(response);
 		ObjectNode jsonObject = ObjectNode.class.cast(response);
 		
 		if (id != null) {
 			while (isIdValueNotCorrect(id, jsonObject)) {
-				response = context.nextValue();
+				response = readResponseNode(context);
 				raiseExceptionIfNotValidResponseObject(response);
 				jsonObject = ObjectNode.class.cast(response);
 			}
@@ -307,7 +308,7 @@ public class JsonRpcClient {
 		writeAndFlushValue(output, request);
 	}
 	
-	private JsonNode readResponseNode(ReadContext context) throws IOException {
+	protected JsonNode readResponseNode(ReadContext context) throws IOException {
 		context.assertReadable();
 		JsonNode response = context.nextValue();
 		logger.debug("JSON-PRC Response: {}", response);
@@ -504,7 +505,7 @@ public class JsonRpcClient {
 	}
 	
 	/**
-	 * Reads a JSON-PRC response from the server.  This blocks until
+	 * Reads a JSON-RPC response from the server.  This blocks until
 	 * a response is received.
 	 *
 	 * @param clazz the expected return type
@@ -519,7 +520,7 @@ public class JsonRpcClient {
 	}
 	
 	/**
-	 * Reads a JSON-PRC response from the server.  This blocks until
+	 * Reads a JSON-RPC response from the server.  This blocks until
 	 * a response is received.
 	 *
 	 * @param returnType the expected return type
@@ -532,7 +533,7 @@ public class JsonRpcClient {
 	}
 	
 	/**
-	 * Reads a JSON-PRC response from the server.  This blocks until
+	 * Reads a JSON-RPC response from the server.  This blocks until
 	 * a response is received. If an id is given, responses that do
 	 * not correspond, are disregarded.
 	 *

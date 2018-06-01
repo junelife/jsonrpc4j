@@ -5,12 +5,12 @@ plugins {
     id 'findbugs'
     id 'pmd'
     id 'jacoco'
-    id 'nebula.info' version '3.4.1'
-    id 'com.github.ben-manes.versions' version '0.13.0'
+    id 'nebula.info' version '3.7.1'
+    id 'com.github.ben-manes.versions' version '0.17.0'
     id 'osgi'
     id 'maven-publish'
-    id 'nebula.nebula-javadoc-jar' version '2.2.2'
-    id 'nebula.nebula-source-jar' version '2.2.2'
+    id 'nebula.javadoc-jar' version '7.2.2'
+    id 'nebula.source-jar' version '7.2.2'
     id 'com.jfrog.bintray' version '1.7.3'
 }
 
